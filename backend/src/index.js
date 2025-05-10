@@ -41,6 +41,11 @@ if (process.env.NODE_ENV === "production") {
   });
 }
 
+app.get("/", (req, res) => {
+  res.send("Chat backend is working!");
+});
+
+
 server.listen(PORT, () => {
   console.log("server is running on PORT:" + PORT);
   connectDB();
