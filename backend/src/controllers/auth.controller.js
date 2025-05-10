@@ -106,11 +106,27 @@ export const updateProfile = async (req, res) => {
         apiSecret: process.env.CLOUDINARY_API_SECRET ? 'Set' : 'Not Set'
       });
 
-      // Simplify the upload process
-      const uploadResponse = await cloudinary.uploader.upload(profilePic, {
-        folder: 'profile_pics',
-        resource_type: 'auto',
-      });
+      // Ensure we have the base64 data
+      const base64Data = profilePic.includes('base64,') ? profilePic.split('base64,')[1] : profilePic;
+
+      // Upload to Cloudinary with proper options
+      const uploadResponse = await cloudinary.uploader.upload(
+        `data:image/jpeg;base64,${base64Data}`,
+        {
+          folder: 'profile_pics',
+          resource_type: 'auto',
+          format: 'jpg',
+          transformation: [
+            { width: 500, height: 500, crop: 'fill' },
+            { quality: 'auto' }
+          ],
+          timeout: 60000 // Increase timeout to 60 seconds
+        }
+      );
+
+      if (!uploadResponse || !uploadResponse.secure_url) {
+        throw new Error('Failed to get secure URL from Cloudinary');
+      }
 
       console.log('Upload successful, URL:', uploadResponse.secure_url);
 
@@ -128,11 +144,8 @@ export const updateProfile = async (req, res) => {
       console.log('Profile updated successfully');
       res.status(200).json(updatedUser);
     } catch (uploadError) {
-      console.error('Detailed upload error:', {
-        message: uploadError.message,
-        name: uploadError.name,
-        stack: uploadError.stack
-      });
+      console.error('Detailed upload error:', uploadError);
+      console.error('Detailed upload error (stringified):', JSON.stringify(uploadError, null, 2));
       return res.status(500).json({ 
         message: "Failed to upload image",
         error: uploadError.message 

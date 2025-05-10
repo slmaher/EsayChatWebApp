@@ -22,6 +22,7 @@ export const useAuthStore = create((set, get) => ({
 
       set({ authUser: res.data });
       get().connectSocket();
+      useChatStore.getState().initSocketListeners();
     } catch (error) {
       console.log("Error in checkAuth:", error);
       set({ authUser: null });
@@ -37,6 +38,7 @@ export const useAuthStore = create((set, get) => ({
       set({ authUser: res.data });
       toast.success("Account created successfully");
       get().connectSocket();
+      useChatStore.getState().initSocketListeners();
     } catch (error) {
       toast.error(error.response.data.message);
     } finally {
@@ -52,6 +54,7 @@ export const useAuthStore = create((set, get) => ({
       toast.success("Logged in successfully");
 
       get().connectSocket();
+      useChatStore.getState().initSocketListeners();
     } catch (error) {
       toast.error(error.response.data.message);
     } finally {
@@ -101,6 +104,7 @@ export const useAuthStore = create((set, get) => ({
     socket.on("getOnlineUsers", (userIds) => {
       set({ onlineUsers: userIds });
     });
+    useChatStore.getState().initSocketListeners();
   },
   disconnectSocket: () => {
     if (get().socket?.connected) get().socket.disconnect();

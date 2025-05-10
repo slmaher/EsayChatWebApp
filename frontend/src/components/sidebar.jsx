@@ -4,20 +4,35 @@ import { useAuthStore } from "../store/useAuthStore";
 import SidebarSkeleton from "./skeletons/SidebarSkeleton";
 import { Users } from "lucide-react";
 import React from "react";
+
 const Sidebar = () => {
-  const { getUsers, users, selectedUser, setSelectedUser, isUsersLoading } =
+  const { getUsers, users, selectedUser, setSelectedUser, isUsersLoading, unreadMessages } =
     useChatStore();
 
   const { onlineUsers } = useAuthStore();
   const [showOnlineOnly, setShowOnlineOnly] = useState(false);
 
   useEffect(() => {
-    getUsers();
+    const fetchUsers = async () => {
+      try {
+        await getUsers();
+      } catch (error) {
+        console.error("Error fetching users:", error);
+      }
+    };
+    fetchUsers();
   }, [getUsers]);
 
   const filteredUsers = showOnlineOnly
     ? users.filter((user) => onlineUsers.includes(user._id))
     : users;
+
+  // Sort users by latest message time (descending)
+  const sortedUsers = [...filteredUsers].sort((a, b) => {
+    const aTime = a.lastMessage?.createdAt ? new Date(a.lastMessage.createdAt).getTime() : 0;
+    const bTime = b.lastMessage?.createdAt ? new Date(b.lastMessage.createdAt).getTime() : 0;
+    return bTime - aTime;
+  });
 
   if (isUsersLoading) return <SidebarSkeleton />;
 
@@ -28,7 +43,6 @@ const Sidebar = () => {
           <Users className="size-6" />
           <span className="font-medium hidden lg:block">Contacts</span>
         </div>
-        {/* TODO: Online filter toggle */}
         <div className="mt-3 hidden lg:flex items-center gap-2">
           <label className="cursor-pointer flex items-center gap-2">
             <input
@@ -46,7 +60,7 @@ const Sidebar = () => {
       </div>
 
       <div className="overflow-y-auto w-full py-3">
-        {filteredUsers.map((user) => (
+        {sortedUsers.map((user) => (
           <button
             key={user._id}
             onClick={() => setSelectedUser(user)}
@@ -62,10 +76,17 @@ const Sidebar = () => {
           >
             <div className="relative mx-auto lg:mx-0">
               <img
-                src={user.profilePic || "/avatar.png"}
-                alt={user.name}
+                src={user.profilePic || "/NoAvatar.png"}
+                alt={user.fullName}
                 className="size-12 object-cover rounded-full"
               />
+              {unreadMessages[user._id] > 0 && (
+                <span
+                  className="absolute -top-1 -right-1 size-4 bg-red-500 rounded-full border-2 border-white flex items-center justify-center text-xs text-white"
+                >
+                  {unreadMessages[user._id]}
+                </span>
+              )}
               {onlineUsers.includes(user._id) && (
                 <span
                   className="absolute bottom-0 right-0 size-3 bg-green-500 
@@ -84,11 +105,12 @@ const Sidebar = () => {
           </button>
         ))}
 
-        {filteredUsers.length === 0 && (
-          <div className="text-center text-zinc-500 py-4">No online users</div>
+        {sortedUsers.length === 0 && (
+          <div className="text-center text-zinc-500 py-4">No users found</div>
         )}
       </div>
     </aside>
   );
 };
+
 export default Sidebar;

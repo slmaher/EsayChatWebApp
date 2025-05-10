@@ -9,6 +9,7 @@ export const useChatStore = create((set, get) => ({
   selectedUser: null,
   isUsersLoading: false,
   isMessagesLoading: false,
+  unreadMessages: {},
 
   getUsers: async () => {
     set({ isUsersLoading: true });
@@ -55,7 +56,15 @@ export const useChatStore = create((set, get) => ({
     socket.on("newMessage", (newMessage) => {
       const isMessageSentFromSelectedUser =
         newMessage.senderId === selectedUser._id;
-      if (!isMessageSentFromSelectedUser) return;
+      if (!isMessageSentFromSelectedUser) {
+        set((state) => ({
+          unreadMessages: {
+            ...state.unreadMessages,
+            [newMessage.senderId]: (state.unreadMessages[newMessage.senderId] || 0) + 1,
+          },
+        }));
+        return;
+      }
 
       set({
         messages: [...get().messages, newMessage],
@@ -68,5 +77,45 @@ export const useChatStore = create((set, get) => ({
     socket.off("newMessage");
   },
 
-  setSelectedUser: (selectedUser) => set({ selectedUser }),
+  setSelectedUser: (selectedUser) => {
+    set((state) => {
+      // If we're closing the chat (selectedUser is null), keep the unread messages
+      if (!selectedUser) {
+        return { selectedUser: null };
+      }
+      
+      // If we're opening a chat, reset that user's unread count
+      return {
+        selectedUser,
+        unreadMessages: {
+          ...state.unreadMessages,
+          [selectedUser._id]: 0,
+        },
+      };
+    });
+  },
+
+  initSocketListeners: () => {
+    const socket = useAuthStore.getState().socket;
+    if (!socket) return;
+
+    socket.off("newMessage"); // Prevent duplicate listeners
+
+    socket.on("newMessage", (newMessage) => {
+      console.log("Received new message:", newMessage); // Debug log
+      const { selectedUser, messages } = get();
+      if (selectedUser && newMessage.senderId === selectedUser._id) {
+        set({
+          messages: [...messages, newMessage],
+        });
+      } else {
+        set((state) => ({
+          unreadMessages: {
+            ...state.unreadMessages,
+            [newMessage.senderId]: (state.unreadMessages[newMessage.senderId] || 0) + 1,
+          },
+        }));
+      }
+    });
+  },
 }));

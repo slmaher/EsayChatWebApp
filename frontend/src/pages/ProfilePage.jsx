@@ -54,12 +54,16 @@ const ProfilePage = () => {
       console.log("Starting image upload process...");
       const loadingToast = toast.loading("Updating profile picture...");
       
-      // Extract the base64 data from the data URL
-      const base64Data = tempImg.split(',')[1];
-      console.log("Base64 data extracted, length:", base64Data.length);
-      
+      // Ensure we're not already in the process of updating
+      if (isUpdatingProfile) {
+        toast.dismiss(loadingToast);
+        toast.error("Please wait for the current upload to complete");
+        return;
+      }
+
+      // Send the complete base64 data URL to the backend
       console.log("Sending request to update profile...");
-      await updateProfile({ profilePic: base64Data });
+      await updateProfile({ profilePic: tempImg });
       console.log("Profile update request completed");
       
       toast.dismiss(loadingToast);
@@ -72,11 +76,6 @@ const ProfilePage = () => {
       // Clear the temp image
       setTempImg(null);
       
-      // Reload the page after a short delay to ensure all components update
-      console.log("Reloading page in 1 second...");
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
     } catch (error) {
       console.error("Error updating profile picture:", error);
       console.error("Error details:", {
@@ -85,7 +84,7 @@ const ProfilePage = () => {
         status: error.response?.status
       });
       toast.error(error.response?.data?.message || "Failed to update profile picture. Please try again.");
-      setSelectedImg(null);
+      setTempImg(null); // Clear temp image on error
     }
   };
 
@@ -100,15 +99,22 @@ const ProfilePage = () => {
 
           {/* avatar upload section */}
           <div className="flex flex-col items-center gap-4">
+            {(() => {
+              console.log("authUser?.profilePic:", authUser?.profilePic);
+              console.log("selectedImg:", selectedImg);
+              console.log("tempImg:", tempImg);
+            })()}
             <div className="relative">
               <img
-                src={tempImg || selectedImg || authUser?.profilePic || "/1.png"}
+                src={tempImg || selectedImg || authUser?.profilePic || "/NoAvatar.png"}
                 alt="Profile"
                 className="size-32 rounded-full object-cover border-4"
                 onError={(e) => {
+                  if (e.target.src !== window.location.origin + "/NoAvatar.png" && e.target.src !== "/NoAvatar.png") {
                   console.error("Error loading image, using fallback");
                   e.target.onerror = null; // Prevent infinite loop
-                  e.target.src = "/1.png";
+                  e.target.src = "/NoAvatar.png";
+                  }
                 }}
               />
               <label

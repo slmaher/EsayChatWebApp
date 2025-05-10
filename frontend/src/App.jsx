@@ -10,6 +10,7 @@ import ProfilePage from "./pages/ProfilePage";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuthStore } from "./store/useAuthStore";
 import { useThemeStore } from "./store/useThemeStore";
+import { useBlockStore } from "./store/useBlockStore";
 import { useEffect } from "react";
 
 import { Loader } from "lucide-react";
@@ -18,12 +19,19 @@ import { Toaster } from "react-hot-toast";
 const App = () => {
   const { authUser, checkAuth, isCheckingAuth, onlineUsers } = useAuthStore();
   const { theme, setTheme } = useThemeStore();
+  const { getBlockedUsers } = useBlockStore();
 
   console.log({ onlineUsers });
 
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
+
+  useEffect(() => {
+    if (authUser) {
+      getBlockedUsers();
+    }
+  }, [authUser, getBlockedUsers]);
 
   useEffect(() => {
     // Initialize theme

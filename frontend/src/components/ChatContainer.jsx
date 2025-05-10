@@ -6,7 +6,7 @@ import ChatHeader from "./ChatHeader";
 import MessageInput from "./MessageInput";
 import MessageSkeleton from "./skeletons/MessageSkeleton";
 import { useAuthStore } from "../store/useAuthStore";
-import { formatMessageTime } from "../lib/utils";
+import { formatMessageTime, formatDate } from "../lib/utils";
 
 const ChatContainer = () => {
   const {
@@ -67,8 +67,8 @@ const ChatContainer = () => {
                 <img
                   src={
                     message.senderId === authUser._id
-                      ? authUser.profilePic || "/avatar.png"
-                      : selectedUser.profilePic || "/avatar.png"
+                      ? authUser.profilePic || "/NoAvatar.png"
+                      : selectedUser.profilePic || "/NoAvatar.png"
                   }
                   alt="profile pic"
                 />
@@ -76,7 +76,7 @@ const ChatContainer = () => {
             </div>
             <div className="chat-header mb-1">
               <time className="text-xs opacity-50 ml-1">
-                {formatMessageTime(message.createdAt)}
+                {formatDate(message.createdAt, { format: 'short' })} {formatMessageTime(message.createdAt)}
               </time>
             </div>
             <div className="chat-bubble flex flex-col">
