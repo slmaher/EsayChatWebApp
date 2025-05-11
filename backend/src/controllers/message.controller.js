@@ -14,12 +14,9 @@ export const getUsersForSidebar = async (req, res) => {
       .select("blockedUserId");
     const blockedUserIds = blockedUsers.map(block => block.blockedUserId);
 
-    // Get all users except the logged-in user and blocked users
+    // Get all users except the logged-in user
     const users = await User.find({
-      _id: { 
-        $ne: loggedInUserId,
-        $nin: blockedUserIds
-      }
+      _id: { $ne: loggedInUserId }
     }).select("-password");
 
     // For each user, get the latest message between them and the logged-in user
@@ -42,6 +39,7 @@ export const getUsersForSidebar = async (req, res) => {
                 createdAt: lastMessage.createdAt,
               }
             : null,
+          isBlocked: blockedUserIds.includes(user._id)
         };
       })
     );

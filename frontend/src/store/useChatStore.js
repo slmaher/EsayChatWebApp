@@ -43,7 +43,11 @@ export const useChatStore = create((set, get) => ({
       );
       set({ messages: [...messages, res.data] });
     } catch (error) {
-      toast.error(error.response.data.message);
+      if (error.response?.status === 403) {
+        toast.error("Cannot send message to blocked user");
+      } else {
+        toast.error(error.response?.data?.error || "Failed to send message");
+      }
     }
   },
 
