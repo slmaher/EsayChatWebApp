@@ -35,15 +35,18 @@ app.use("/api/blocks", blockRoutes);
 
 if (process.env.NODE_ENV === "production") {
   app.use(express.static(path.join(__dirname, "../frontend/dist")));
+    
 
+  //go one up to front folder
   app.get("*", (req, res) => {
     res.sendFile(path.join(__dirname, "../frontend", "dist", "index.html"));
   });
 }
 
 app.get("/", (req, res) => {
-  res.send("Chat backend is working!");
+  res.send("Backend is working!");
 });
+
 
 
 server.listen(PORT, () => {
